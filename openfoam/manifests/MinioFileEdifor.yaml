@@ -5,24 +5,40 @@ metadata:
 spec:
   initContainers:
   - name: downloader
-    image: minio/mc
+    image: ubuntu:latest
     env:
     - name: "MINIO_URL"
-      value: 
+      value: "http://10.43.210.158"
     - name: "MINIO_ID"
+      value: "console"
     - name: "MINIO_SECRET"
+      value: "console123"
     - name: "MINIO_BUCKET_NAME"
+      value: "test"
     - name: "MINIO_TARGET_DIR"
+      value: "single-pipe"
+    securityContext:
+      runAsUser: 0  
+      runAsGroup: 0  
     command: ["/bin/bash","-c"]
     args:
-      - "mc alias set bucket $MINIO_URL $MINIO_ID $MINIO_SECRET"
-      - "mc cp $MINIO_BUCKET_NAME$MINIO_TARGET_DIR /data/ --recursive"
+      - |
+        apt update
+        apt install wget -y
+        wget https://dl.min.io/client/mc/release/linux-amd64/mc
+        chmod +x mc
+        ./mc alias set bucket $MINIO_URL $MINIO_ID $MINIO_SECRET --insecure
+        ./mc cp bucket/$MINIO_BUCKET_NAME$MINIO_TARGET_DIR /data/ --recursive --insecure
+        cp mc /data/
     volumeMounts:
       - name: bucket-files
         mountPath: /data
   containers:
   - name: editor
     image: ubuntu:latest
+    securityContext:
+      runAsUser: 0  
+      runAsGroup: 0  
     command: ["/bin/bash","-c"]
     args:
       - "tail -f /dev/null"
