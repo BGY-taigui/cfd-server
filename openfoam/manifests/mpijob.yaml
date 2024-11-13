@@ -1,0 +1,83 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: openfoam-mpi
+spec:
+  slotsPerWorker: 30
+  runPolicy:
+    cleanPodPolicy: Running
+    ttlSecondsAfterFinished: 60
+  sshAuthMountPath: /home/mpiuser/.ssh
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          containers:
+          - image: tyamanakatyamanaka704/optest
+            name: mpi-launcher
+            securityContext:
+              runAsUser: 1001
+            command: ["/bin/bash","-c"]
+            args:
+            - |
+                tail -f /dev/null
+            env:
+            - name: "MINIO_ACCESS_ID"
+              value: "console"
+            - name: "MINIO_SECRET_KEY"
+              value: "console123"
+            - name: "MINIO_ACCESS_URL"
+              value: "https://minio.minio.svc.cluster.local"
+              
+            - name:
+            resources:
+              limits:
+                cpu: 1
+                memory: 12Gi
+            volumeMounts:
+            - mountPath: /home/mpiuser/work
+              name: workdir
+          volumes:
+          - name: workdir
+            persistentVolumeClaim:
+              claimName: workdir-nfs
+    Worker:
+      replicas: 2
+      template:
+        spec:
+          containers:
+          - image: tyamanakatyamanaka704/optest
+            name: mpi-worker
+            securityContext:
+              runAsUser: 1001
+            command:
+            - /usr/sbin/sshd
+            args:
+            - -De
+            - -f
+            - /home/mpiuser/.sshd_config
+            resources:
+              limits:
+                cpu: 30
+                memory: 16Gi
+            volumeMounts:
+            - mountPath: /home/mpiuser/work
+              name: workdir
+          volumes:
+          - name: workdir
+            persistentVolumeClaim:
+              claimName: workdir-nfs
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workdir-nfs
+spec:
+  storageClassName: nfs-client
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 3Gi
