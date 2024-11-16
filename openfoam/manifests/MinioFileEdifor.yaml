@@ -8,7 +8,7 @@ spec:
     image: ubuntu:latest
     env:
     - name: "MINIO_URL"
-      value: "http://10.43.210.158"
+      value: "https://10.43.210.158"
     - name: "MINIO_ID"
       value: "console"
     - name: "MINIO_SECRET"
@@ -28,7 +28,8 @@ spec:
         wget https://dl.min.io/client/mc/release/linux-amd64/mc
         chmod +x mc
         ./mc alias set bucket $MINIO_URL $MINIO_ID $MINIO_SECRET --insecure
-        ./mc cp bucket/$MINIO_BUCKET_NAME$MINIO_TARGET_DIR /data/ --recursive --insecure
+        mkdir /data/$MINIO_BUCKET_NAME
+        ./mc cp bucket/$MINIO_BUCKET_NAME/$MINIO_TARGET_DIR/ /data/$MINIO_TARGET_DIR/ --recursive --insecure
         cp mc /data/
     volumeMounts:
       - name: bucket-files
@@ -41,7 +42,11 @@ spec:
       runAsGroup: 0  
     command: ["/bin/bash","-c"]
     args:
-      - "tail -f /dev/null"
+      - |
+        cp /data/mc ~/
+        chmod +x ~/mc
+        ./mc alias set bucket $MINIO_URL $MINIO_ID $MINIO_SECRET --insecure
+        tail -f /dev/null
     volumeMounts:
       - name: bucket-files
         mountPath: /data

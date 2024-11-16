@@ -46,13 +46,14 @@ spec:
         wget https://dl.min.io/client/mc/release/linux-amd64/mc
         chmod +x mc
         ./mc alias set bucket $MINIO_URL $MINIO_ID $MINIO_SECRET --insecure
-        ./mc cp bucket/$MINIO_BUCKET_NAME/$MINIO_TARGET_DIR /data/ --recursive --insecure
+        mkdir /data/$MINIO_TARGET_DIR
+        ./mc cp bucket/$MINIO_BUCKET_NAME/$MINIO_TARGET_DIR/ /data/$MINIO_TARGET_DIR/ --recursive --insecure
         cp mc /data/
     volumeMounts:
       - name: bucket-files
         mountPath: /data
   containers:
-  - name: editor
+  - name: pvserver
     image: tyamanakatyamanaka704/pvserver
     securityContext:
     command: ["/bin/bash","-c"]
